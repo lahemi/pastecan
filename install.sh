@@ -11,6 +11,7 @@ src=$(pwd)
 [ ! -d "targ" ] && mkdir -p "$targ"
 
 cp -r "${src}/htmls" "$targ"
+cp -r "${src}/fgs" "$targ"
 [ ! -d "$tmps" ] && mkdir "$tmps"
 
 if [ -n "$GOPATH" ]; then
