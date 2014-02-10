@@ -4,12 +4,12 @@
 package main
 
 import (
-	"pastecan/synsgo"
 	"html/template"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"os"
+	"pastecan/pbnf"
 	"regexp"
 	"strings"
 	"time"
@@ -22,17 +22,21 @@ type Page struct {
 	Body  template.HTML
 }
 
-var canPath = os.Getenv("HOME") + "/.local/share/pastecan/"
-var htmlPath = canPath + "htmls/"
-var pastePath = "/tmp/pastecan/"
+var (
+	canPath   = os.Getenv("HOME") + "/.local/share/pastecan/"
+	htmlPath  = canPath + "htmls/"
+	pastePath = "/tmp/pastecan/"
 
-var templates = template.Must(template.ParseFiles(
-	htmlPath+"paste.html",
-	htmlPath+"view.html",
-	htmlPath+"gopaste.html",
-	htmlPath+"goview.html",
-))
-var validPath = regexp.MustCompile(`^/(view|goview)/([a-zA-Z]+)$`)
+	templates = template.Must(template.ParseFiles(
+		htmlPath+"paste.html",
+		htmlPath+"view.html",
+		htmlPath+"gopaste.html",
+		htmlPath+"goview.html",
+		htmlPath+"luapaste.html",
+		htmlPath+"luaview.html",
+	))
+	validPath = regexp.MustCompile(`^/(view|goview|luaview)/([a-zA-Z]+)$`)
+)
 
 // Hastebin-style: uneven -> consonant, even -> vowel.
 func genRandTitle() (title string) {
@@ -133,9 +137,9 @@ func makeSaveHandler(base, syn string) (string, http.HandlerFunc) {
 	return path, func(w http.ResponseWriter, r *http.Request) {
 		body := r.FormValue("body")
 		title := genRandTitle()
-		switch {
-		case syn == "go":
-			body = synsgo.Colourify(body)
+		switch syn {
+		case "go", "lua":
+			body = pbnf.Colourify(syn, body)
 		}
 		p := &Page{Title: title, Body: template.HTML(body)}
 		p, err := p.save()
@@ -150,9 +154,12 @@ func makeSaveHandler(base, syn string) (string, http.HandlerFunc) {
 func main() {
 	http.HandleFunc(makeHandler("paste"))
 	http.HandleFunc(makeHandler("gopaste"))
+	http.HandleFunc(makeHandler("luapaste"))
 	http.HandleFunc(makeSaveHandler("save", ""))
 	http.HandleFunc(makeSaveHandler("savego", "go"))
+	http.HandleFunc(makeSaveHandler("savelua", "lua"))
 	http.HandleFunc(makeViewHandler("view"))
 	http.HandleFunc(makeViewHandler("goview"))
+	http.HandleFunc(makeViewHandler("luaview"))
 	http.ListenAndServe(":12022", nil)
 }
