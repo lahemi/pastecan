@@ -19,6 +19,7 @@ if [ -n "$GOPATH" ]; then
         mkdir "${GOPATH}/src/pastecan"
     fi
     cp -r *go "${GOPATH}/src/pastecan" &&
+        cp -r pbnf "${GOPATH}/src/pastecan/" &&
     go install pastecan
 fi
 
