@@ -42,4 +42,5 @@ textarea {
     color: #999;
     border: 0px;
     font-size: 120%;
+    cursor: pointer;
 }
