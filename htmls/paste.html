@@ -1,18 +1,22 @@
 <!doctype html>
+<html>
 <head>
     <meta charset='UTF-8'>
+    <link rel="stylesheet" type="text/css" href="/styles/front.css" />
     <title>PasteCan</title>
 </head>
-<body>
-    <p><a href="https://github.com/lahemi/pastecan">Source</a></p>
-    <p><a href="/gopaste/">Go</a> - <a href="/luapaste/">Lua</a></p>
 
+<body>
 <form action="/save/{{.Title}}" method="POST">
-    <div>
-        <textarea name="body" rows="20" cols="80">
-        </textarea>
+
+    <div id="top">
+        <input type="submit" value="Save" id="dosubs">|
+        <a href="https://github.com/lahemi/pastecan">Source</a>
+        -- <a href="/gopaste/">Go</a> - <a href="/luapaste/">Lua</a>
     </div>
-    <div><input type="submit" value="Save"></div>
+
+    <textarea name="body"></textarea>
+
 </form>
 </body>
 </html>

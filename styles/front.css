@@ -1,0 +1,45 @@
+body {
+    background-color: #3A3A3A;
+    height: 100%;
+    color: #CCC;
+    padding: 0; margin: 0;
+    font-family: monospace;
+    font-size: 1.3em;
+}
+a {
+    color: #CCC;
+    text-decoration: none;
+    font-size: 120%;
+}
+form {
+    min-height: 100%;
+}
+textarea {
+    border: 0px;
+    color: #CCC;
+    background-color: #3A3A3A;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    max-width: 100%;
+    min-height: 40em;
+    outline: none;
+    resize: vertical;
+    font-size: 1.1em;
+}
+
+#top {
+    font-size: 100%;
+    color: #CCC;
+    border-bottom: 2px solid #FFF;
+    border-color: #CCC;
+    background-color: #330000;
+    padding-bottom: 3px;
+}
+#dosubs {
+    background: none;
+    border: none;
+    color: #999;
+    border: 0px;
+    font-size: 120%;
+}
