@@ -25,6 +25,7 @@ type Page struct {
 var (
 	canPath   = os.Getenv("HOME") + "/.local/share/pastecan/"
 	htmlPath  = canPath + "htmls/"
+	cssPath   = canPath + "styles/"
 	pastePath = "/tmp/pastecan/"
 
 	templates = template.Must(template.ParseFiles(
@@ -161,5 +162,14 @@ func main() {
 	http.HandleFunc(makeViewHandler("view"))
 	http.HandleFunc(makeViewHandler("goview"))
 	http.HandleFunc(makeViewHandler("luaview"))
+	// For "external" CSS, you need to reveal a small
+	// fraction of the filesystem, such horror !
+	http.Handle(
+		"/styles/",
+		http.StripPrefix(
+			"/styles/",
+			http.FileServer(http.Dir(cssPath)),
+		),
+	)
 	http.ListenAndServe(":12022", nil)
 }
