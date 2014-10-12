@@ -2,21 +2,20 @@
 <html>
 <head>
     <meta charset='UTF-8'>
-    <link rel="stylesheet" type="text/css" href="/styles/front.css" />
     <title>PasteCan</title>
+    <link rel="stylesheet" type="text/css" href="/styles/front.css" />
 </head>
-
 <body>
-<form action="/save/{{.Title}}" method="POST">
+    <form action="/save/{{.Title}}" method="POST">
 
-    <div id="top">
-        <input type="submit" value="Save" id="dosubs">|
-        <a href="https://github.com/lahemi/pastecan">Source</a>
-        -- <a href="/gopaste/">Go</a> - <a href="/luapaste/">Lua</a>
-    </div>
+        <div id="top">
+            <input type="submit" value="Save" id="dosubs">|
+            <a href="https://github.com/lahemi/pastecan">Source</a>
+            -- <a href="/gopaste/">Go</a> - <a href="/luapaste/">Lua</a>
+        </div>
 
-    <textarea name="body"></textarea>
+        <textarea name="body"></textarea>
 
-</form>
+    </form>
 </body>
 </html>

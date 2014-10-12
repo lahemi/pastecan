@@ -4,6 +4,8 @@
 package main
 
 import (
+	"flag"
+	"fmt"
 	"html/template"
 	"io/ioutil"
 	"math/rand"
@@ -23,10 +25,12 @@ type Page struct {
 }
 
 var (
-	canPath   = os.Getenv("HOME") + "/.local/share/pastecan/"
-	htmlPath  = canPath + "htmls/"
-	cssPath   = canPath + "styles/"
-	pastePath = "/tmp/pastecan/"
+	canPath  = os.Getenv("HOME") + "/.local/share/pastecan/"
+	htmlPath = canPath + "htmls/"
+	cssPath  = canPath + "styles/"
+
+	pastePath string
+	port      string
 
 	templates = template.Must(template.ParseFiles(
 		htmlPath+"paste.html",
@@ -38,6 +42,26 @@ var (
 	))
 	validPath = regexp.MustCompile(`^/(view|goview|luaview)/([a-zA-Z]+)$`)
 )
+
+func init() {
+	flag.StringVar(&pastePath, "d", "/tmp/pastecan/", "Pastes here.")
+	flag.StringVar(&pastePath, "dir", "/tmp/pastecan/", "Pastes here.")
+	flag.StringVar(&port, "p", "12022", "Port to use.")
+	flag.StringVar(&port, "port", "12022", "Port to use.")
+
+	flag.Parse()
+
+	if _, err := os.Stat(pastePath); os.IsNotExist(err) {
+		if err := os.Mkdir(pastePath, 0777); err != nil {
+			fmt.Fprintln(os.Stderr, "Failed to create paste dir.")
+			os.Exit(1)
+		}
+	}
+
+	if !strings.HasSuffix(pastePath, "/") {
+		pastePath += "/"
+	}
+}
 
 // Hastebin-style: uneven -> consonant, even -> vowel.
 func genRandTitle() (title string) {
@@ -171,5 +195,5 @@ func main() {
 			http.FileServer(http.Dir(cssPath)),
 		),
 	)
-	http.ListenAndServe(":12022", nil)
+	http.ListenAndServe(":"+port, nil)
 }

@@ -2,17 +2,19 @@
 <head>
     <meta charset='UTF-8'>
     <title>PasteCan, for Lua</title>
+    <link rel="stylesheet" type="text/css" href="/styles/front.css" />
 </head>
 <body>
-     <p><a href="https://github.com/lahemi/pastecan">Source</a></p>
-     <p><a href="/paste/">Raw</a> - <a href="/gopaste/">Go</a></p> 
+    <form action="/savelua/{{.Title}}" method="POST">
 
-<form action="/savelua/{{.Title}}" method="POST">
-    <div>
-        <textarea name="body" rows="20" cols="80">
-        </textarea>
-    </div>
-    <div><input type="submit" value="Save"></div>
-</form>
+        <div id="top">
+            <input type="submit" value="Save" id="dosubs">|
+            <a href="https://github.com/lahemi/pastecan">Source</a>
+            -- <a href="/paste/">Raw</a> - <a href="/gopaste/">Go</a>
+        </div>
+
+        <textarea name="body"></textarea>
+
+    </form>
 </body>
 </html>
