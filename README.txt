@@ -1,12 +1,14 @@
 
 This is a simple ``pastebin'' like program.
 
-Works at least with Go1.1 and 1.2.
+Works at least with Go versions 1.1, 1.2 and 1.3.
 
 Has no external configuration yet, though the sources
 are real short and simple, so it shouldn't be too hard
-to modify them to suit you purposes. (For example,
-12022 is the default port).
+to modify them to suit you purposes.
+
+Commandline options for setting the port(-p[ort]) and
+the directory for pastes(-d[ir]).
 
 `pbnf` is a syntax highlighter generator. It reads
 simple pseudo bnf-like files, which it uses to generate
