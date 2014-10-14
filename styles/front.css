@@ -9,31 +9,37 @@ body {
     margin: 0;
     font-family: VGA, Courier, "Droid Sans Mono", "Courier New", monospace;
     font-size: 120%;
+    overflow:hidden;
 }
 a {
     color: inherit;
     text-decoration: none;
     font-size: 120%;
+    cursor:pointer;
 }
 textarea {
     border: 0px;
     color: inherit;
     background-color: inherit;
-    padding: 0;
+    padding: 1px;
     margin: 0;
     width: 100%;
-    height: 100%;
+    height: 96%;
     outline: none;
-    resize: vertical;
+    resize: none;
     font-size: 110%;
+    position:absolute;
+    top:36px;
 }
 
 #top {
     color: inherit;
     border-bottom: 2px solid #FFF;
     border-color: inherit;
-    background-color: inherit;
+    background-color: #000;
     padding-bottom: 3px;
+    position:absolute;
+    width:100%;
 }
 #dosubs {
     background: none;
@@ -41,4 +47,7 @@ textarea {
     color: inherit;
     font-family: inherit;
     font-size: 120%;
+}
+input {
+    cursor:pointer;
 }
