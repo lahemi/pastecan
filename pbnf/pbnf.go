@@ -1,95 +1,138 @@
 package pbnf
 
 import (
+	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
-	"strings"
+	"unicode"
 )
 
-type Slm struct {
-	Name  string
-	Elems []string
+const (
+	cmtspan = `<span class="comment">`
+	strspan = `<span class="string">`
+	keyspan = `<span class="keyword">`
+	bltspan = `<span class="builtin">`
+	es      = `</span>`
+)
+
+// In string, in multiline comment, in normal comment.
+// Like the octal value in Unix permissions.
+var (
+	fgDir = os.Getenv("HOME") + "/.local/share/pastecan/fgs/"
+
+	basesyntax = genSyntax("base")
+	isSpace    = isGen(basesyntax["spaces"])
+	isPunct    = isGen(basesyntax["puncts"])
+	htmlescs   = map[string]string{
+		">": "&gt;", "<": "&lt;", "&": "&amp;",
+	}
+)
+
+func stderr(a ...interface{}) {
+	fmt.Fprintln(os.Stderr, a)
+}
+func dierr(emsg ...interface{}) {
+	stderr(emsg)
+	os.Exit(1)
 }
 
-/*
-<rule>      ::= <text> <opt-white> ":=" <opt-white> <expr> <EOL>
-<opt-white> ::= " " <opt-white> | ""
-<expr>      ::= <element> | <element> "|" <expr>
-<element>   ::= '"' <text> '"'
+func escape(s string, escapes map[string]string) string {
+	for k, v := range escapes {
+		if s == k {
+			return v
+		}
+	}
+	return s
+}
 
-! need a way to denote 0 or more repeats
-*/
+// Need a way to do repeats in `grammar|syntax` files.
 func genSyntax(lang string) map[string][]string {
-	s, e := ioutil.ReadFile(os.Getenv("HOME") + "/.local/share/pastecan/fgs/" + lang + ".fg")
-	if e != nil {
-		panic(e)
+	cnt, err := ioutil.ReadFile(fgDir + lang + ".fg")
+	if err != nil {
+		dierr(err)
 	}
 	// Crude, could and should be dealt with more elegantly.
 	conv := func(str string) string {
-		switch {
-		case str == `\n`:
-			str = "\n"
-		case str == `\r`:
-			str = "\r"
-		case str == `\t`:
-			str = "\t"
+		escs := map[string]string{
+			`\`: " ", `\n`: "\n", `\r`: "\r",
+			`\t`: "\t", `\;`: ";", `\\`: `\`,
 		}
-		return str
+		return escape(str, escs)
 	}
 
+	const (
+		RD = iota
+		IDENT
+		COMP
+		CMT
+	)
+	// These are runes for simplicity.
+	const (
+		cmtMark   = '#'
+		identMark = ':'
+		endMark   = ';'
+	)
 	var (
-		sls   = make(map[string][]string)
-		slm   Slm
-		t, ts string
-
-		inSym, inExpr = true, false
+		retMap = make(map[string][]string)
+		buf    string
+		ident  string
+		bufs   []string
+		text   = []rune(string(cnt))
+		state  = RD
 	)
 
-	for i := 0; i < len(s); i++ {
-		switch {
-		case inSym:
-			if s[i] == ' ' {
-				continue
+	for i := 0; i < len(text); i++ {
+		c := text[i]
+		switch state {
+		case CMT:
+			if c == '\n' {
+				state = RD
 			}
-			if s[i] == ':' && s[i+1] == '=' {
-				slm.Name = ts
-				ts = ""
-				inSym = false
-			} else {
-				ts += string(s[i])
+
+		case RD:
+			switch {
+			case c == cmtMark:
+				state = CMT
+			case c == identMark:
+				state = IDENT
 			}
-		case s[i] == '|' && !inExpr:
-			t = conv(t)
-			slm.Elems = append(slm.Elems, t)
-			t = ""
-		case s[i] == '\n' && !inExpr:
-			if s[i-1] != '|' && s[i-1] != ',' {
-				inSym = true
+
+		case IDENT:
+			switch {
+			case unicode.IsSpace(c) && buf == "":
+
+			case unicode.IsSpace(c) && buf != "":
+				ident = buf
+				buf = ""
+				state = COMP
+
+			default:
+				buf += string(c)
 			}
-		case (s[i] == ' ' || s[i] == '\t' || s[i] == '\n') && !inExpr:
-		case !inExpr && s[i] == '"':
-			inExpr = true
-		case inExpr:
-			if s[i] == '"' {
-				inExpr = false
-				if s[i+1] == '\n' {
-					t = conv(t)
-					slm.Elems = append(slm.Elems, t)
-					sls[slm.Name] = slm.Elems
-					t = ""
-					slm.Elems = []string{}
-				}
-				if s[i+1] == '"' {
-					inExpr = true
-				} else {
-					continue
-				}
+
+		case COMP:
+			switch {
+			case unicode.IsSpace(c) && buf == "":
+
+			case unicode.IsSpace(c) && buf != "":
+				bufs = append(bufs, conv(buf))
+				buf = ""
+
+			case c == endMark && buf == "":
+				retMap[ident] = bufs
+
+				bufs = []string{}
+				ident = ""
+				state = RD
+
+			default:
+				buf += string(c)
 			}
-			t += string(s[i])
 		}
 	}
 
-	return sls
+	return retMap
 }
 
 func isGen(l []string) func(string) bool {
@@ -103,72 +146,52 @@ func isGen(l []string) func(string) bool {
 	}
 }
 
-const (
-	cmtspan = `<span class="comment">`
-	strspan = `<span class="string">`
-	keyspan = `<span class="keyword">`
-	bltspan = `<span class="builtin">`
-	es      = `</span>`
-)
-
-// In string, in multiline comment, in normal comment.
-// Like the octal value in Unix permissions.
-var (
-	stateval   = 0
-	basesyntax = genSyntax("base")
-	isSpace    = isGen(basesyntax["spaces"])
-	isPunct    = isGen(basesyntax["puncts"])
-)
-
-func state(st int) bool {
-	if stateval == st {
-		return true
-	}
-	return false
-}
-
-var escapes = map[string]string{
-	">": "&gt;", "<": "&lt;", "&": "&amp;",
-}
-
-func htmlesc(s string) string {
-	for k, v := range escapes {
-		if s == k {
-			return v
-		}
-	}
-	return s
-}
-
-func Colourify(lang, body string) string {
-	var syntax map[string][]string
+func inferSyntax(lang string) (map[string][]string, error) {
 	switch lang {
 	case "go":
-		syntax = genSyntax("go")
+		return genSyntax("go"), nil
 	case "lua":
-		syntax = genSyntax("lua")
+		return genSyntax("lua"), nil
 	default:
-		return ""
+		return nil, errors.New("no syntax file found")
 	}
+}
+
+// This is by far the most awful part of this code.
+// It is also somewhat incomplete and potentially buggy.
+func Colourify(lang, body string) string {
+	syntax, err := inferSyntax(lang)
+	if err != nil {
+		dierr(err)
+	}
+	const (
+		RD = iota
+		SGLCMT
+		MULCMT
+		STR
+	)
 	var (
 		output               []string
-		strtmp, word, outstr string
+		strcmp, word, outstr string
 
 		isStrChar = isGen(syntax["strchars"])
 		isKeyword = isGen(syntax["keywords"])
 		isBuiltin = isGen(syntax["builtins"])
+
+		text  = []rune(body)
+		state = RD
 	)
 
 	out := func(sp ...string) {
 		output = append(output, sp...)
 	}
 	pf := func(ps string) {
-		p := htmlesc(ps)
+		p := escape(ps, htmlescs)
 		if isSpace(p) || isPunct(p) {
 			switch {
-			case state(0) && isKeyword(word):
+			case state == RD && isKeyword(word):
 				out(keyspan, word, es, p)
-			case state(0) && isBuiltin(word):
+			case state == RD && isBuiltin(word):
 				out(bltspan, word, es, p)
 			default:
 				out(word, p)
@@ -186,40 +209,46 @@ func Colourify(lang, body string) string {
 		return false
 	}
 
-	s := strings.Split(body, "") // So that we'll have UTF-8 chars.
-	for i := 0; i < len(s); i++ {
-		switch {
-		case state(0):
+	for i := 0; i < len(text); i++ {
+		c := string(text[i])
+		switch state {
+		case RD:
 			switch {
-			case isStrChar(s[i]):
-				out(word, strspan, s[i])
-				stateval += 4
-				strtmp = s[i]
+			case isStrChar(c):
+				out(word, strspan)
+				state = STR
+				strcmp = c
 				word = ""
-			case i < len(s)-1 && syntest(s[i]+s[i+1], "mulcmts"):
-				out(cmtspan, s[i])
-				stateval += 2
-			case i < len(s)-1 && syntest(s[i]+s[i+1], "comment"):
-				out(cmtspan, s[i])
-				stateval += 1
-			default:
-				pf(s[i])
+			case i < len(text)-1 && syntest(c+string(text[i+1]), "mulcmts"):
+				out(cmtspan)
+				state = MULCMT
+			case i < len(text)-1 && syntest(c+string(text[i+1]), "comment"):
+				out(cmtspan)
+				state = SGLCMT
 			}
-		case state(4) && isStrChar(s[i]) && strtmp == s[i]:
-			out(word, s[i], es)
-			stateval -= 4
-			word, strtmp = "", ""
-		case state(2) && syntest(s[i-1]+s[i], "mulcmte"):
-			out(word, s[i], es)
-			stateval -= 2
-			word = ""
-		case state(1) && s[i] == "\n":
-			out(word, es)
-			stateval -= 1
-			word = ""
-		default:
-			pf(s[i])
+
+		case MULCMT:
+			if syntest(string(text[i-1])+c, "mulcmte") {
+				out(word, c, es)
+				state = RD
+				c, word = "", ""
+			}
+
+		case STR:
+			if isStrChar(c) && strcmp == c {
+				out(word, c, es)
+				state = RD
+				c, word, strcmp = "", "", ""
+			}
+
+		case SGLCMT:
+			if c == "\n" {
+				out(es)
+				state = RD
+				c, word = "", ""
+			}
 		}
+		pf(c)
 	}
 
 	for _, v := range output {

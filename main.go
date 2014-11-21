@@ -177,6 +177,7 @@ func makeSaveHandler(base, syn string) (string, http.HandlerFunc) {
 }
 
 func main() {
+	fmt.Printf("Started %s in port: %s\n", os.Args[0], port)
 	http.HandleFunc(makeHandler("paste"))
 	http.HandleFunc(makeHandler("gopaste"))
 	http.HandleFunc(makeHandler("luapaste"))
